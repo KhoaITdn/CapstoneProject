@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 
 # 1. CẤU HÌNH
 # Đường dẫn đến file model bạn đã tải về
-MODEL_PATH = 'best_model.keras' 
+MODEL_PATH = 'D:\capstoneProject\best_model.keras' 
 # Các nhãn cảm xúc tương ứng với lúc train
 EMOTIONS = ['Gian du', 'Kinh tom', 'So hai', 'Hanh phuc', 'Binh thuong', 'Buon', 'Ngac nhien']
 
