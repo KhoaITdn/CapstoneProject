@@ -48,17 +48,23 @@ while True:
         roi_gray = gray_frame[y:y+h, x:x+w]
         
         try:
-            # --- TIEN XU LY ANH (Giong het luc train) ---
+            # --- TIEN XU LY ANH (Phai giong het luc train Method 3) ---
+            # Model MobileNetV2 yeu cau input (48, 48, 3) --> RGB
+            
+            # Lay vung anh RGB tu frame goc (thay vi gray_frame)
+            roi_color = frame[y:y+h, x:x+w]
+            
             # 1. Resize ve 48x48
-            roi_gray = cv2.resize(roi_gray, (48, 48))
+            roi_color = cv2.resize(roi_color, (48, 48))
+            
             # 2. Chuan hoa ve khoang [0, 1]
-            roi_gray = roi_gray.astype('float') / 255.0
-            # 3. Expand dimensions de phu hop input model (1, 48, 48, 1)
-            roi_gray = np.expand_dims(roi_gray, axis=0) # Them batch dimension
-            roi_gray = np.expand_dims(roi_gray, axis=-1) # Them channel dimension
+            roi_color = roi_color.astype('float') / 255.0
+            
+            # 3. Expand dimensions de phu hop input model (1, 48, 48, 3)
+            roi_color = np.expand_dims(roi_color, axis=0) 
 
             # --- DU DOAN ---
-            prediction = model.predict(roi_gray, verbose=0)
+            prediction = model.predict(roi_color, verbose=0)
             max_index = int(np.argmax(prediction))
             predicted_emotion = EMOTIONS[max_index]
             confidence = prediction[0][max_index] * 100
