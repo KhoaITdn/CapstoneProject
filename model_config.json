@@ -1,0 +1,25 @@
+{
+  "img_size": 224,
+  "num_classes": 7,
+  "emotions": [
+    "Surprise",
+    "Fear",
+    "Disgust",
+    "Happiness",
+    "Sadness",
+    "Anger",
+    "Neutral"
+  ],
+  "color_mode": "rgb",
+  "preprocessing": "efficientnet_preprocess_input",
+  "test_accuracy": 0.7506518959999084,
+  "tta_accuracy": 0.7832464146023468,
+  "model_name": "EfficientNetB0_CBAM_RAFDB_v2",
+  "fixes": [
+    "efficientnet_preprocess_input (not rescale)",
+    "input_size_224 (not 100)",
+    "unfreeze_100_layers (not 50)",
+    "reduced_dropout (0.4/0.3 not 0.5)",
+    "label_smoothing_0.05 (not 0.1)"
+  ]
+}

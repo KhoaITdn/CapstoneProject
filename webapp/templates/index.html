@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call Emotion Recognition</title>
+    <meta name="description"
+        content="Hệ thống nhận diện cảm xúc khuôn mặt theo thời gian thực trong cuộc gọi video - CNN + CBAM Attention">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- ============ LOBBY SCREEN ============ -->
+    <div id="lobby-screen" class="screen active">
+        <div class="lobby-container">
+            <div class="lobby-hero">
+                <div class="hero-glow"></div>
+                <div class="hero-icon">🎥</div>
+                <h1 class="hero-title">Emotion<span class="accent">Call</span></h1>
+                <p class="hero-subtitle">Nhận diện cảm xúc khuôn mặt theo thời gian thực trong cuộc gọi video</p>
+                <p class="hero-tech">CNN + CBAM Attention | WebRTC | Real-time Analytics</p>
+            </div>
+
+            <div class="lobby-card">
+                <div class="input-group">
+                    <label for="user-name-input">Tên hiển thị</label>
+                    <input type="text" id="user-name-input" placeholder="Nhập tên của bạn..." maxlength="30"
+                        autocomplete="off">
+                </div>
+
+                <div class="lobby-actions">
+                    <button id="btn-create-room" class="btn btn-primary btn-large">
+                        <span class="btn-icon">➕</span>
+                        <span>Tạo phòng mới</span>
+                    </button>
+
+                    <div class="divider">
+                        <span>hoặc</span>
+                    </div>
+
+                    <div class="join-group">
+                        <input type="text" id="room-id-input" placeholder="Nhập mã phòng..." maxlength="8"
+                            autocomplete="off">
+                        <button id="btn-join-room" class="btn btn-secondary">
+                            <span class="btn-icon">🔗</span>
+                            <span>Tham gia</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lobby-error" class="error-message" style="display:none;"></div>
+            </div>
+
+            <!-- Camera Preview -->
+            <div class="lobby-preview">
+                <video id="preview-video" autoplay muted playsinline></video>
+                <div class="preview-overlay" id="preview-overlay">
+                    <span>📷 Cho phép truy cập camera để tiếp tục</span>
+                </div>
+                <div class="preview-status" id="preview-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ CALL SCREEN ============ -->
+    <div id="call-screen" class="screen">
+        <!-- TOP BAR -->
+        <header id="call-header">
+            <div class="header-left">
+                <h1 class="app-title">🎥 Emotion<span class="accent">Call</span></h1>
+                <div class="room-info">
+                    <span class="room-badge" id="room-id-display">—</span>
+                    <button id="btn-copy-room" class="btn-icon-only" title="Sao chép mã phòng">📋</button>
+                </div>
+            </div>
+            <div class="header-center">
+                <div class="call-timer" id="call-timer">00:00</div>
+                <div class="participant-count" id="participant-count">
+                    <span class="count-icon">👥</span>
+                    <span id="count-number">1</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge connected" id="status-badge">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Đang kết nối...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main id="call-main">
+            <!-- LEFT: Video Grid -->
+            <section class="video-section">
+                <div class="video-grid" id="video-grid">
+                    <!-- Local video -->
+                    <div class="video-tile" id="local-tile" data-user-id="local">
+                        <video id="local-video" autoplay muted playsinline></video>
+                        <div class="tile-overlay">
+                            <div class="emotion-badge" id="local-emotion-badge">
+                                <span class="emotion-badge-emoji">😐</span>
+                                <span class="emotion-badge-text">Đang chờ...</span>
+                            </div>
+                            <div class="tile-name" id="local-name">Bạn</div>
+                        </div>
+                        <div class="engagement-indicator" id="local-engagement-indicator">
+                            <div class="engagement-fill"></div>
+                        </div>
+                    </div>
+                    <!-- Remote videos will be added dynamically -->
+                </div>
+
+                <!-- Call Controls -->
+                <div class="call-controls">
+                    <button id="btn-toggle-mic" class="control-btn active" title="Tắt/Bật micro">
+                        <span class="control-icon">🎤</span>
+                    </button>
+                    <button id="btn-toggle-camera" class="control-btn active" title="Tắt/Bật camera">
+                        <span class="control-icon">📹</span>
+                    </button>
+                    <button id="btn-toggle-analytics" class="control-btn active" title="Hiện/Ẩn phân tích cảm xúc">
+                        <span class="control-icon">📊</span>
+                    </button>
+                    <button id="btn-end-call" class="control-btn danger" title="Kết thúc cuộc gọi">
+                        <span class="control-icon">📞</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- RIGHT: Analytics Panel -->
+            <aside class="analytics-panel" id="analytics-panel">
+                <div class="analytics-header">
+                    <h2>📊 Phân tích cảm xúc</h2>
+                    <button id="btn-close-analytics" class="btn-icon-only">✕</button>
+                </div>
+
+                <!-- Participant Emotion Cards -->
+                <div class="participant-emotions" id="participant-emotions">
+                    <!-- Will be populated dynamically -->
+                </div>
+
+                <!-- Group Engagement -->
+                <div class="card engagement-card">
+                    <div class="card-header">
+                        <h3>⚡ Mức độ tương tác nhóm</h3>
+                    </div>
+                    <div class="group-engagement">
+                        <div class="engagement-circle" id="group-engagement-circle">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="bg" cx="60" cy="60" r="52"></circle>
+                                <circle class="progress" id="group-engagement-progress" cx="60" cy="60" r="52"
+                                    stroke-dasharray="327" stroke-dashoffset="327"></circle>
+                            </svg>
+                            <span class="engagement-value" id="group-engagement-value">0</span>
+                        </div>
+                        <div class="engagement-details">
+                            <div class="engagement-label" id="group-engagement-label">Đang chờ</div>
+                            <div class="engagement-breakdown" id="engagement-breakdown"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion Distribution Chart -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>📊 Phân bố cảm xúc (Nhóm)</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="emotionBarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Emotion Timeline -->
+                <div class="card chart-card timeline-card">
+                    <div class="card-header">
+                        <h3>📈 Timeline tương tác</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="engagementTimelineChart"></canvas>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-container"></div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+
+</html>
